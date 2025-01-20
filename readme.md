@@ -32,7 +32,7 @@ Casse-Brique/
 │       ├── barre.mp3
 │       ├── pop.mp3
 │       └── toc.mp3
-├── main.py                    # Code principal du jeu
+├── casse_brique.py                    # Code principal du jeu
 └── README.md                  # Documentation du projet
 ```
 
@@ -58,7 +58,7 @@ Casse-Brique/
 
 3. Lancez le jeu :
    ```bash
-   python main.py
+   python casse_brique.py
    ```
 
 ---
