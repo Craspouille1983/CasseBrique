@@ -63,7 +63,7 @@ def show_start_screen():
     screen.blit(title_text, title_rect)
 
     # Afficher les instructions
-    instructions_text = instructions_font.render("Appuyez sur Espace pour commencer", True, text_color)
+    instructions_text = instructions_font.render("Appuyez sur espace pour commencer", True, text_color)
     instructions_rect = instructions_text.get_rect(center=(screen_width // 2, screen_height // 2))
     screen.blit(instructions_text, instructions_rect)
 
@@ -83,6 +83,18 @@ def handle_collision_with_bricks(ball_rect, ball_speed_x, ball_speed_y, bricks, 
             ball_centerx = ball_rect.centerx
             ball_centery = ball_rect.centery
 
+            # Vérifier si la collision est proche d'un angle
+            if abs(ball_centerx - brick.left) < 5 or abs(ball_centerx - brick.right) < 5:
+                ball_speed_x *= 1.1  # Augmenter légèrement la vitesse horizontale
+            if abs(ball_centery - brick.top) < 5 or abs(ball_centery - brick.bottom) < 5:
+                ball_speed_y *= 1.1  # Augmenter légèrement la vitesse verticale
+
+            # Ajouter une légère randomisation à la direction
+            import random
+            ball_speed_x += random.uniform(-0.02, 0.02)
+            ball_speed_y += random.uniform(-0.02, 0.02)
+
+            # Calculer la nouvelle direction
             if ball_centerx < brick_centerx:
                 ball_speed_x = -abs(ball_speed_x)  # Rebond vers la gauche
             elif ball_centerx > brick_centerx:
@@ -96,15 +108,138 @@ def handle_collision_with_bricks(ball_rect, ball_speed_x, ball_speed_y, bricks, 
             break  # Arrêter dès qu'une collision est détectée
 
     return ball_speed_x, ball_speed_y, score
+# Fonction pour afficher l'écran de Game Over
+def show_game_over_screen(final_score):
+    screen.fill(background_color)
+    game_over_font = pygame.font.Font('assets/fonts/SFAlienEncounters-Italic.ttf', 60)
+    instructions_font = pygame.font.Font('assets/fonts/SFAlienEncountersSolid.ttf', 36)
 
-# Fonction principale pour démarrer le jeu
+    # Afficher "Game Over"
+    game_over_text = game_over_font.render("Partie terminée", True, text_color)
+    game_over_rect = game_over_text.get_rect(center=(screen_width // 2, screen_height // 4))
+    screen.blit(game_over_text, game_over_rect)
+
+    # Afficher le score final
+    score_text = instructions_font.render(f"Score final : {final_score}", True, text_color)
+    score_rect = score_text.get_rect(center=(screen_width // 2, screen_height // 2 - 50))
+    screen.blit(score_text, score_rect)
+
+    # Afficher les instructions pour rejouer ou quitter
+    replay_text = instructions_font.render("Appuyez sur espace pour rejouer", True, text_color)
+    replay_rect = replay_text.get_rect(center=(screen_width // 2, screen_height // 2 + 50))
+    screen.blit(replay_text, replay_rect)
+
+    quit_text = instructions_font.render("Appuyez sur Q pour quitter", True, text_color)
+    quit_rect = quit_text.get_rect(center=(screen_width // 2, screen_height // 2 + 100))
+    screen.blit(quit_text, quit_rect)
+
+    pygame.display.flip()
+
+    # Attendre l'entrée de l'utilisateur
+    waiting_for_input = True
+    while waiting_for_input:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:  # Rejouer
+                    waiting_for_input = False
+                    start_game()
+                elif event.key == pygame.K_q:  # Quitter
+                    pygame.quit()
+                    sys.exit()
+# Fonction pour afficher l'écran de fin de niveau
+def show_level_complete_screen(current_level, score):
+    screen.fill(background_color)
+    level_complete_font = pygame.font.Font('assets/fonts/SFAlienEncounters-Italic.ttf', 60)
+    instructions_font = pygame.font.Font('assets/fonts/SFAlienEncountersSolid.ttf', 36)
+
+    # Afficher "Niveau Terminé"
+    level_complete_text = level_complete_font.render(f"Niveau {current_level} Terminé !", True, text_color)
+    level_complete_rect = level_complete_text.get_rect(center=(screen_width // 2, screen_height // 4))
+    screen.blit(level_complete_text, level_complete_rect)
+
+    # Afficher le score
+    score_text = instructions_font.render(f"Score : {score}", True, text_color)
+    score_rect = score_text.get_rect(center=(screen_width // 2, screen_height // 2 - 50))
+    screen.blit(score_text, score_rect)
+
+    # Afficher les instructions pour continuer
+    next_level_text = instructions_font.render("Appuyez sur Espace pour continuer", True, text_color)
+    next_level_rect = next_level_text.get_rect(center=(screen_width // 2, screen_height // 2 + 50))
+    screen.blit(next_level_text, next_level_rect)
+
+    pygame.display.flip()
+
+    # Attendre l'entrée de l'utilisateur pour passer au niveau suivant
+    waiting_for_input = True
+    while waiting_for_input:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:  # Passer au niveau suivant
+                    waiting_for_input = False
+
+
+# Fonction pour générer un nouveau niveau
+def generate_level(level):
+    global ball_speed_x, ball_speed_y, bricks, brick_color
+
+    # Augmenter la vitesse de la balle avec le niveau
+    ball_speed_x = 0.25 + (level - 1) * 0.1
+    ball_speed_y = 0.25 + (level - 1) * 0.1
+
+    # Modifier les briques pour chaque niveau
+    bricks = []
+    num_rows = 5 + (level - 1)  # Ajouter des lignes de briques selon le niveau
+
+    for row in range(num_rows):
+        for col in range(num_columns):
+            # Alterner les motifs selon le niveau
+            if level == 1:
+                brick_x = col * (brick_width + 10) + 35
+                brick_y = row * (brick_height + 5) + 50
+            elif level == 2:
+                # Exemple de motif en quinconce
+                brick_x = col * (brick_width + 10) + 35 + (row % 2) * 30
+                brick_y = row * (brick_height + 5) + 50
+            else:
+                # Motifs supplémentaires pour les futurs niveaux
+                brick_x = col * (brick_width + 10) + 35
+                brick_y = row * (brick_height + 5) + 50
+
+            bricks.append(pygame.Rect(brick_x, brick_y, brick_width, brick_height))
+
+    # Changer les couleurs des briques selon le niveau
+    if level == 2:
+        brick_color = (255, 0, 0)  # Rouge
+    elif level == 3:
+        brick_color = (0, 0, 255)  # Bleu
+    else:
+        brick_color = (0, 255, 0)  # Vert par défaut
+
+
+# Mise à jour de la fonction principale du jeu pour gérer plusieurs niveaux
 def start_game():
     global paddle_x, paddle_y, ball_x, ball_y, ball_speed_x, ball_speed_y, score, bricks
 
-    # Boucle principale du jeu
+    # Initialiser les variables
+    current_level = 1
+    paddle_x = (screen_width - paddle_width) // 2
+    ball_x = screen_width // 2
+    ball_y = screen_height // 2
+    ball_speed_x = 0.25
+    ball_speed_y = 0.25
+    score = 0
+
+    # Générer le premier niveau
+    generate_level(current_level)
+
     running = True
     while running:
-        # Gestion des événements
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -125,46 +260,52 @@ def start_game():
 
         # Collision avec les bords de la fenêtre
         if ball_x - ball_radius <= 0 or ball_x + ball_radius >= screen_width:
-            ball_speed_x = -ball_speed_x  # Inverser la direction horizontale
-            pygame.mixer.Sound('assets/sounds/toc.mp3').play()
+            ball_speed_x = -ball_speed_x
         if ball_y - ball_radius <= 0:
-            ball_speed_y = -ball_speed_y  # Inverser la direction verticale
-            pygame.mixer.Sound('assets/sounds/toc.mp3').play()
+            ball_speed_y = -ball_speed_y
 
-        # Collision avec la raquette (gestion améliorée)
+        # Vérifier si la balle touche le bas de l'écran (Game Over)
+        if ball_y - ball_radius > screen_height:
+            # pygame.mixer.Sound('assets/sounds/gameover.mp3').play()
+            running = False
+            show_game_over_screen(score)
+
+        # Collision avec la raquette
         paddle_rect = pygame.Rect(paddle_x, paddle_y, paddle_width, paddle_height)
         if ball_rect.colliderect(paddle_rect):
-            pygame.mixer.Sound('assets/sounds/barre.mp3').play()
-            # Calculer la position d'impact et changer la direction
-            if ball_x < paddle_x or ball_x > paddle_x + paddle_width:
-                ball_speed_x = -ball_speed_x  # Rebond horizontal
-            if ball_y + ball_radius > paddle_y:
-                ball_speed_y = -ball_speed_y  # Rebond vertical
+            ball_speed_y = -ball_speed_y
 
         # Gestion des collisions avec les briques et mise à jour du score
         ball_speed_x, ball_speed_y, score = handle_collision_with_bricks(ball_rect, ball_speed_x, ball_speed_y, bricks, score)
 
-        # Remplir l'écran avec une couleur unie
+        # Vérifier si toutes les briques ont été détruites (niveau terminé)
+        if not bricks:
+            # pygame.mixer.Sound('assets/sounds/level_complete.mp3').play()
+            show_level_complete_screen(current_level, score)
+            current_level += 1  # Passer au niveau suivant
+            generate_level(current_level)  # Générer le nouveau niveau
+
+            # Réinitialiser la position de la balle et de la raquette
+            ball_x = screen_width // 2
+            ball_y = screen_height // 2
+            paddle_x = (screen_width - paddle_width) // 2
+
+        # Dessiner les éléments
         screen.fill(background_color)
-
-        # Dessiner la balle
         pygame.draw.circle(screen, ball_color, (ball_x, ball_y), ball_radius)
-
-        # Dessiner la raquette
         pygame.draw.rect(screen, paddle_color, (paddle_x, paddle_y, paddle_width, paddle_height))
-
-        # Dessiner les briques
         for brick in bricks:
             pygame.draw.rect(screen, brick_color, brick)
 
-        # Afficher le score
+        # Afficher le score et le niveau
         score_text = font.render(f"Score: {score}", True, text_color)
+        level_text = font.render(f"Niveau: {current_level}", True, text_color)
         screen.blit(score_text, (10, 10))
+        screen.blit(level_text, (screen_width - 200, 10))
 
         # Mettre à jour l'affichage
         pygame.display.flip()
 
-    # Quitter Pygame
     pygame.quit()
     sys.exit()
 
