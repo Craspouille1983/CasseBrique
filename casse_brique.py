@@ -27,11 +27,11 @@ ball_speed_x = .25
 ball_speed_y = .25
 
 # Propriétés de la raquette
-paddle_width = 100
+paddle_width = 150
 paddle_height = 10
 paddle_x = (screen_width - paddle_width) // 2
 paddle_y = screen_height - 30
-paddle_speed = 3
+paddle_speed = 2.5
 
 # Propriétés des briques
 brick_width = 60
